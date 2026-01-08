@@ -24,7 +24,7 @@ export class DashboardPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    
+
     // Initialize main locators
     this.dashboardHeader = page.locator('.oxd-topbar-header-breadcrumb, .oxd-topbar-header').first();
     this.userDropdown = page.locator('.oxd-userdropdown-tab');

@@ -14,7 +14,7 @@ export class LoginPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    
+
     // Initialize locators using role-based and semantic selectors
     this.usernameInput = page.getByPlaceholder('Username');
     this.passwordInput = page.getByPlaceholder('Password');
@@ -32,7 +32,7 @@ export class LoginPage extends BasePage {
     logger.info('Navigating to login page');
     await this.navigateTo(this.config.baseUrl);
     await this.waitForPageLoad();
-    
+
     // Wait for login form to be visible
     await this.waitForElement(this.usernameInput, 10000);
   }
@@ -76,11 +76,11 @@ export class LoginPage extends BasePage {
    */
   async login(username: string, password: string): Promise<void> {
     logger.info(`Attempting login with username: ${username}`);
-    
+
     await this.enterUsername(username);
     await this.enterPassword(password);
     await this.clickLoginButton();
-    
+
     logger.info('Login action completed');
   }
 
@@ -110,13 +110,13 @@ export class LoginPage extends BasePage {
       if (await alertError.isVisible().catch(() => false)) {
         return true;
       }
-      
+
       // Also check for general alert container
       const alertContainer = this.page.locator('.oxd-alert');
       if (await alertContainer.isVisible().catch(() => false)) {
         return true;
       }
-      
+
       return false;
     } catch {
       return false;

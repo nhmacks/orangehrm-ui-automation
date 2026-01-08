@@ -52,11 +52,11 @@ export abstract class BasePage {
   async fill(locator: Locator, text: string, options?: { clear?: boolean; timeout?: number }): Promise<void> {
     try {
       await this.waitForElement(locator, options?.timeout);
-      
+
       if (options?.clear) {
         await locator.clear();
       }
-      
+
       await locator.fill(text, { timeout: options?.timeout });
       logger.info(`Filled element with text: "${text}"`);
     } catch (error) {
