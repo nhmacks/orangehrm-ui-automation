@@ -2,6 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import reporter from 'cucumber-html-reporter';
 import { logger } from './Logger';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 export class ReportGenerator {
   private static reportsDir = path.join(process.cwd(), 'reports');
@@ -113,6 +117,39 @@ export class ReportGenerator {
   }
 
   /**
+   * Open HTML report in default browser
+   */
+  static async openReport(): Promise<void> {
+    if (!fs.existsSync(ReportGenerator.htmlReport)) {
+      logger.warn('HTML report not found. Cannot open report.');
+      return;
+    }
+
+    try {
+      const platform = process.platform;
+      let command: string;
+
+      // Determine the command based on the operating system
+      if (platform === 'darwin') {
+        command = `open "${ReportGenerator.htmlReport}"`;
+      } else if (platform === 'win32') {
+        command = `start "" "${ReportGenerator.htmlReport}"`;
+      } else {
+        // Linux and other Unix-like systems
+        command = `xdg-open "${ReportGenerator.htmlReport}"`;
+      }
+
+      await execAsync(command);
+      logger.info(`Opening HTML report in default browser...`);
+    } catch (error) {
+      logger.warn('Could not open report automatically. Please open manually:', { 
+        path: ReportGenerator.htmlReport,
+        error 
+      });
+    }
+  }
+
+  /**
    * Clean old reports
    */
   static cleanReports(): void {
@@ -156,8 +193,11 @@ export class ReportGenerator {
 
 // Generate report if this file is executed directly
 if (require.main === module) {
-  ReportGenerator.generateHtmlReport();
-  ReportGenerator.generateSummary();
+  (async () => {
+    ReportGenerator.generateHtmlReport();
+    ReportGenerator.generateSummary();
+    await ReportGenerator.openReport();
+  })();
 }
 
 export default ReportGenerator;

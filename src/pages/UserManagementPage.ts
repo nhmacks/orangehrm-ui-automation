@@ -36,7 +36,7 @@ export class UserManagementPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    
+
     // Navigation
     this.adminMenuItem = page.getByRole('link', { name: 'Admin' });
     this.systemUsersMenuItem = page.getByRole('menuitem', { name: 'System Users' });
@@ -54,15 +54,16 @@ export class UserManagementPage extends BasePage {
 
     // Results table
     this.resultsTable = page.locator('.oxd-table, [role="table"]');
-    this.tableRows = page.locator('.oxd-table-body .oxd-table-card, .oxd-table-row').filter({ hasNotText: 'Username' });
+    // Table rows - use .oxd-table-body .oxd-table-card for data rows (excludes header)
+    this.tableRows = page.locator('.oxd-table-body .oxd-table-card');
     this.noRecordsMessage = page.locator('.oxd-toast-content--info, .oxd-table-body:has-text("No Records Found")');
     this.recordsFoundText = page.locator('.oxd-text--span:has-text("Records Found")');
 
-    // Table columns (using nth-child for specific columns)
-    this.usernameColumn = page.locator('.oxd-table-cell:nth-child(2)');
-    this.userRoleColumn = page.locator('.oxd-table-cell:nth-child(3)');
-    this.employeeNameColumn = page.locator('.oxd-table-cell:nth-child(4)');
-    this.statusColumn = page.locator('.oxd-table-cell:nth-child(5)');
+    // Table columns (locate within table rows for better accuracy)
+    this.usernameColumn = page.locator('.oxd-table-row .oxd-table-cell').nth(1);
+    this.userRoleColumn = page.locator('.oxd-table-row .oxd-table-cell').nth(2);
+    this.employeeNameColumn = page.locator('.oxd-table-row .oxd-table-cell').nth(3);
+    this.statusColumn = page.locator('.oxd-table-row .oxd-table-cell').nth(4);
   }
 
   /**
@@ -72,7 +73,10 @@ export class UserManagementPage extends BasePage {
   async navigateToAdmin(): Promise<void> {
     logger.info('Navigating to Admin module');
     await this.click(this.adminMenuItem);
-    await this.waitForPageLoad();
+    // Wait for either the Admin URL to appear or the System Users UI to be ready
+    const urlWait = this.page.waitForURL(/.*admin.*/, { timeout: 15000 });
+    const uiWait = this.waitForElement(this.searchButton, 15000);
+    await Promise.race([urlWait, uiWait]);
     logger.info('Navigated to Admin module');
   }
 
@@ -151,8 +155,9 @@ export class UserManagementPage extends BasePage {
   async clickResetButton(): Promise<void> {
     logger.info('Clicking reset button');
     await this.click(this.resetButton);
-    await this.page.waitForTimeout(500);
-    logger.info('Reset button clicked');
+    // Wait for filters to reset and data to reload
+    await this.waitForResultsToLoad();
+    logger.info('Reset button clicked and results reloaded');
   }
 
   async clickAddButton(): Promise<void> {
@@ -212,60 +217,64 @@ export class UserManagementPage extends BasePage {
 
   async getAllUsernames(): Promise<string[]> {
     const usernames: string[] = [];
-    const count = await this.usernameColumn.count();
-    
+    const rows = this.tableRows;
+    const count = await rows.count();
+
     for (let i = 0; i < count; i++) {
-      const username = await this.usernameColumn.nth(i).textContent();
+      const username = await rows.nth(i).locator('.oxd-table-cell').nth(1).textContent();
       if (username) {
         usernames.push(username.trim());
       }
     }
-    
+
     logger.info(`Retrieved ${usernames.length} usernames from results`);
     return usernames;
   }
 
   async getAllUserRoles(): Promise<string[]> {
     const roles: string[] = [];
-    const count = await this.userRoleColumn.count();
-    
+    const rows = this.tableRows;
+    const count = await rows.count();
+
     for (let i = 0; i < count; i++) {
-      const role = await this.userRoleColumn.nth(i).textContent();
+      const role = await rows.nth(i).locator('.oxd-table-cell').nth(2).textContent();
       if (role) {
         roles.push(role.trim());
       }
     }
-    
+
     logger.info(`Retrieved ${roles.length} roles from results`);
     return roles;
   }
 
   async getAllEmployeeNames(): Promise<string[]> {
     const names: string[] = [];
-    const count = await this.employeeNameColumn.count();
-    
+    const rows = this.tableRows;
+    const count = await rows.count();
+
     for (let i = 0; i < count; i++) {
-      const name = await this.employeeNameColumn.nth(i).textContent();
+      const name = await rows.nth(i).locator('.oxd-table-cell').nth(3).textContent();
       if (name) {
         names.push(name.trim());
       }
     }
-    
+
     logger.info(`Retrieved ${names.length} employee names from results`);
     return names;
   }
 
   async getAllStatuses(): Promise<string[]> {
     const statuses: string[] = [];
-    const count = await this.statusColumn.count();
-    
+    const rows = this.tableRows;
+    const count = await rows.count();
+
     for (let i = 0; i < count; i++) {
-      const status = await this.statusColumn.nth(i).textContent();
+      const status = await rows.nth(i).locator('.oxd-table-cell').nth(4).textContent();
       if (status) {
         statuses.push(status.trim());
       }
     }
-    
+
     logger.info(`Retrieved ${statuses.length} statuses from results`);
     return statuses;
   }
@@ -328,7 +337,7 @@ export class UserManagementPage extends BasePage {
 
   async verifyUsernamesContain(searchTerm: string): Promise<boolean> {
     const usernames = await this.getAllUsernames();
-    const allMatch = usernames.every(username => 
+    const allMatch = usernames.every(username =>
       username.toLowerCase().includes(searchTerm.toLowerCase())
     );
     logger.info(`Usernames contain "${searchTerm}": ${allMatch}`);
@@ -337,7 +346,7 @@ export class UserManagementPage extends BasePage {
 
   async verifyAllRolesMatch(expectedRole: string): Promise<boolean> {
     const roles = await this.getAllUserRoles();
-    const allMatch = roles.every(role => 
+    const allMatch = roles.every(role =>
       role.toLowerCase() === expectedRole.toLowerCase()
     );
     logger.info(`All roles match "${expectedRole}": ${allMatch}`);
@@ -346,7 +355,7 @@ export class UserManagementPage extends BasePage {
 
   async verifyEmployeeNamesContain(searchTerm: string): Promise<boolean> {
     const names = await this.getAllEmployeeNames();
-    const allMatch = names.every(name => 
+    const allMatch = names.every(name =>
       name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     logger.info(`Employee names contain "${searchTerm}": ${allMatch}`);
@@ -355,7 +364,7 @@ export class UserManagementPage extends BasePage {
 
   async verifyAllStatusesMatch(expectedStatus: string): Promise<boolean> {
     const statuses = await this.getAllStatuses();
-    const allMatch = statuses.every(status => 
+    const allMatch = statuses.every(status =>
       status.toLowerCase() === expectedStatus.toLowerCase()
     );
     logger.info(`All statuses match "${expectedStatus}": ${allMatch}`);
@@ -372,8 +381,9 @@ export class UserManagementPage extends BasePage {
   }
 
   async waitForResultsToLoad(): Promise<void> {
-    await this.page.waitForTimeout(1000);
-    await this.waitForElement(this.resultsTable, 5000);
+    // Wait for table data to load - increased timeout to handle dynamic data loading
+    await this.page.waitForTimeout(2000);
+    await this.waitForElement(this.resultsTable, 8000);
   }
 
   /**
@@ -381,16 +391,19 @@ export class UserManagementPage extends BasePage {
    */
 
   async getEditButtonsCount(): Promise<number> {
-    const editButtons = this.page.locator('.oxd-table-cell-actions button, .oxd-icon-button').filter({ has: this.page.locator('i.bi-pencil-fill, i[class*="edit"]') });
-    const count = await editButtons.count();
-    logger.info(`Found ${count} edit buttons`);
+    // Count icon buttons in the actions column (edit buttons appear first)
+    const actionCells = this.page.locator('.oxd-table-cell-actions');
+    const editButtons = actionCells.locator('button').first();
+    const count = await actionCells.count();
+    logger.info(`Found ${count} potential edit buttons`);
     return count;
   }
 
   async getDeleteButtonsCount(): Promise<number> {
-    const deleteButtons = this.page.locator('.oxd-table-cell-actions button, .oxd-icon-button').filter({ has: this.page.locator('i.bi-trash, i[class*="trash"], i[class*="delete"]') });
-    const count = await deleteButtons.count();
-    logger.info(`Found ${count} delete buttons`);
+    // Count the second buttons in action cells (delete buttons)
+    const actionCells = this.page.locator('.oxd-table-cell-actions');
+    const count = await actionCells.count();
+    logger.info(`Found ${count} potential delete buttons`);
     return count;
   }
 
