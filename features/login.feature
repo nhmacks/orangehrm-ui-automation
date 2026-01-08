@@ -98,6 +98,3 @@ Feature: User Authentication
     When I login with default credentials
     Then I should be logged in successfully
     And I should see the user dropdown in the header
-
-
-
