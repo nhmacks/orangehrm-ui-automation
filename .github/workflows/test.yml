@@ -66,7 +66,7 @@ jobs:
           echo "HEADLESS=true" >> .env
 
       - name: Run smoke tests
-        run: npm run test:tags "@lg010"
+        run: npm run test:tags "@lg001"
         continue-on-error: true
 
       - name: Generate HTML report
@@ -232,7 +232,7 @@ jobs:
       - run: npx playwright install chromium --with-deps
       
       - name: Run smoke tests
-        run: npm run test:tags "@lg010"
+        run: npm run test:tags "@lg001"
         env:
           BROWSER: chromium
           HEADLESS: true
