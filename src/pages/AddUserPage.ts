@@ -30,14 +30,14 @@ export class AddUserPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    
+
     // Form fields - using multiple selectors for reliability
     this.userRoleDropdown = page.locator('.oxd-select-text-input').first();
     this.employeeNameInput = page.locator('input[placeholder*="Type for hints"]');
     this.employeeNameSuggestions = page.locator('.oxd-autocomplete-dropdown');
     this.statusDropdown = page.locator('.oxd-select-text-input').nth(1);
     // Username input - use role-based locator or fallback to nth selector
-    this.usernameInput = page.getByLabel(/username/i).or(page.locator('input[placeholder*="Username"]')).or(page.locator('.oxd-input').nth(3));
+    this.usernameInput = page.getByLabel('Username');
     this.passwordInput = page.locator('input[type="password"]').first();
     this.confirmPasswordInput = page.locator('input[type="password"]').nth(1);
 
@@ -102,27 +102,27 @@ export class AddUserPage extends BasePage {
       await this.waitForElement(this.employeeNameSuggestions, 10000).catch(() => {
         logger.warn('Autocomplete suggestions did not appear - will try selecting anyway');
       });
-      
+
       // Additional wait for suggestions to populate
       await this.page.waitForTimeout(2000);
-      
+
       // Try exact match first, then partial match
       let suggestion = this.page.locator('.oxd-autocomplete-option').filter({ hasText: new RegExp(`^${employeeName}$`) }).first();
       let suggestionCount = await suggestion.count();
-      
+
       if (suggestionCount === 0) {
         // If exact match not found, try partial match
         logger.info('Exact match not found, trying partial match');
         suggestion = this.page.locator('.oxd-autocomplete-option').filter({ hasText: employeeName }).first();
         suggestionCount = await suggestion.count();
       }
-      
+
       if (suggestionCount === 0) {
         // If still no matches, log warning but don't fail (demo site may have issues)
         logger.warn(`No autocomplete suggestions found for "${employeeName}" - continuing anyway`);
         return; // Exit gracefully without clicking
       }
-      
+
       await this.waitForElement(suggestion, 5000);
       await this.click(suggestion);
       logger.info(`Employee "${employeeName}" selected from suggestions`);
@@ -173,7 +173,7 @@ export class AddUserPage extends BasePage {
     password: string
   ): Promise<void> {
     logger.info(`Creating user: ${username}`);
-    
+
     await this.selectUserRole(userRole);
     await this.enterEmployeeName(employeeNameSearch);
     await this.selectEmployeeFromSuggestions(employeeNameSelect);
@@ -181,7 +181,7 @@ export class AddUserPage extends BasePage {
     await this.enterUsername(username);
     await this.enterPassword(password);
     await this.enterConfirmPassword(password);
-    
+
     logger.info('User form filled, ready to save');
   }
 

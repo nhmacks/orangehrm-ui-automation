@@ -205,7 +205,6 @@ export class DashboardPage extends BasePage {
     logger.info(`Searching for: ${searchTerm}`);
     await this.fill(this.searchInput, searchTerm);
     await this.pressKey('Enter');
-    await this.waitForPageLoad();
   }
 
   /**
