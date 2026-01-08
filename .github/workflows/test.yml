@@ -253,81 +253,102 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Create reports directory
-        run: mkdir -p reports
         
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: downloaded-artifacts
         
-      - name: Extract and organize reports
+      - name: Prepare reports directory
         run: |
-          # Get the latest run number
+          # Get branch name and run number
           RUN_NUM=${{ github.run_number }}
           BRANCH_NAME=$(echo ${{ github.ref }} | sed 's|refs/heads/||')
           
-          # Create branch-specific directory
-          mkdir -p reports/$BRANCH_NAME/$RUN_NUM
+          # Create directory structure
+          mkdir -p public/reports/$BRANCH_NAME/$RUN_NUM
           
           # Copy reports
           if [ -d "downloaded-artifacts/cucumber-report-chromium" ]; then
-            cp -r downloaded-artifacts/cucumber-report-chromium/* reports/$BRANCH_NAME/$RUN_NUM/
+            cp -r downloaded-artifacts/cucumber-report-chromium/* public/reports/$BRANCH_NAME/$RUN_NUM/
           fi
           
           if [ -d "downloaded-artifacts/test-results-chromium/reports" ]; then
-            cp -r downloaded-artifacts/test-results-chromium/reports/* reports/$BRANCH_NAME/$RUN_NUM/ 2>/dev/null || true
+            cp -r downloaded-artifacts/test-results-chromium/reports/* public/reports/$BRANCH_NAME/$RUN_NUM/ 2>/dev/null || true
           fi
           
-          # Create index
-          echo "<!DOCTYPE html>" > index.html
-          echo "<html>" >> index.html
-          echo "<head>" >> index.html
-          echo "<title>OrangeHRM Test Reports</title>" >> index.html
-          echo "<style>" >> index.html
-          echo "body { font-family: Arial, sans-serif; margin: 20px; }" >> index.html
-          echo "h1 { color: #333; }" >> index.html
-          echo "ul { list-style-type: none; padding: 0; }" >> index.html
-          echo "li { margin: 10px 0; }" >> index.html
-          echo "a { color: #0066cc; text-decoration: none; font-weight: bold; }" >> index.html
-          echo "a:hover { text-decoration: underline; }" >> index.html
-          echo ".branch { margin-top: 30px; padding: 15px; background: #f5f5f5; border-left: 4px solid #0066cc; }" >> index.html
-          echo ".run-link { margin-left: 20px; margin-top: 5px; }" >> index.html
-          echo "</style>" >> index.html
-          echo "</head>" >> index.html
-          echo "<body>" >> index.html
-          echo "<h1>🧪 OrangeHRM Test Reports</h1>" >> index.html
-          echo "<p>Latest test execution reports:</p>" >> index.html
+      - name: Create index page
+        run: |
+          echo "<!DOCTYPE html>" > public/index.html
+          echo "<html>" >> public/index.html
+          echo "<head>" >> public/index.html
+          echo "<title>OrangeHRM Test Reports</title>" >> public/index.html
+          echo "<meta charset='UTF-8'>" >> public/index.html
+          echo "<style>" >> public/index.html
+          echo "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }" >> public/index.html
+          echo ".container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }" >> public/index.html
+          echo "h1 { color: #333; margin-bottom: 10px; }" >> public/index.html
+          echo ".subtitle { color: #666; margin-bottom: 30px; }" >> public/index.html
+          echo ".branch-section { margin-bottom: 40px; }" >> public/index.html
+          echo ".branch-title { font-size: 24px; color: #0066cc; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #0066cc; }" >> public/index.html
+          echo ".run-list { list-style: none; padding: 0; }" >> public/index.html
+          echo ".run-item { margin: 10px 0; padding: 15px; background: #f9f9f9; border-radius: 4px; transition: background 0.2s; }" >> public/index.html
+          echo ".run-item:hover { background: #e8f4ff; }" >> public/index.html
+          echo ".run-link { color: #0066cc; text-decoration: none; font-weight: 600; font-size: 16px; }" >> public/index.html
+          echo ".run-link:hover { text-decoration: underline; }" >> public/index.html
+          echo ".badge { display: inline-block; padding: 4px 8px; border-radius: 3px; font-size: 12px; margin-left: 10px; }" >> public/index.html
+          echo ".badge-latest { background: #4CAF50; color: white; }" >> public/index.html
+          echo "</style>" >> public/index.html
+          echo "</head>" >> public/index.html
+          echo "<body>" >> public/index.html
+          echo "<div class='container'>" >> public/index.html
+          echo "<h1>🧪 OrangeHRM Test Reports</h1>" >> public/index.html
+          echo "<p class='subtitle'>Automated test execution reports</p>" >> public/index.html
           
-          # List all branches with reports
-          for branch_dir in reports/*/; do
-            branch=$(basename "$branch_dir")
-            echo "<div class='branch'>" >> index.html
-            echo "<h2>Branch: <strong>$branch</strong></h2>" >> index.html
-            
-            # List runs for each branch (reverse order, latest first)
-            for run_dir in $(ls -d "$branch_dir"*/ 2>/dev/null | sort -rV); do
-              run=$(basename "$run_dir")
-              echo "<div class='run-link'>" >> index.html
-              echo "<a href='reports/$branch/$run/cucumber-report.html'>Run #$run</a>" >> index.html
-              echo "</div>" >> index.html
-            done
-            echo "</div>" >> index.html
+          # List reports organized by branch
+          for branch_dir in public/reports/*/; do
+            if [ -d "$branch_dir" ]; then
+              branch=$(basename "$branch_dir")
+              echo "<div class='branch-section'>" >> public/index.html
+              echo "<h2 class='branch-title'>📁 Branch: $branch</h2>" >> public/index.html
+              echo "<ul class='run-list'>" >> public/index.html
+              
+              # Get runs in reverse order (latest first)
+              runs=$(ls -d "$branch_dir"*/ 2>/dev/null | sort -rV || echo "")
+              first=true
+              for run_dir in $runs; do
+                if [ -d "$run_dir" ]; then
+                  run=$(basename "$run_dir")
+                  badge=""
+                  if [ "$first" = true ]; then
+                    badge="<span class='badge badge-latest'>LATEST</span>"
+                    first=false
+                  fi
+                  echo "<li class='run-item'>" >> public/index.html
+                  echo "<a class='run-link' href='reports/$branch/$run/cucumber-report.html'>📊 Run #$run</a>$badge" >> public/index.html
+                  echo "</li>" >> public/index.html
+                fi
+              done
+              echo "</ul>" >> public/index.html
+              echo "</div>" >> public/index.html
+            fi
           done
           
-          echo "</body>" >> index.html
-          echo "</html>" >> index.html
+          echo "<hr style='margin: 30px 0; border: none; border-top: 1px solid #ddd;'>" >> public/index.html
+          echo "<p style='text-align: center; color: #999; font-size: 14px;'>Generated by GitHub Actions • Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>" >> public/index.html
+          echo "</div>" >> public/index.html
+          echo "</body>" >> public/index.html
+          echo "</html>" >> public/index.html
         
-      - name: Commit and push
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git commit -m "docs: Update test reports - Run #${{ github.run_number }}" --allow-empty
-          git push origin gh-pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'docs: Update test reports - Run #${{ github.run_number }}'
+
 
 
