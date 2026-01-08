@@ -42,15 +42,28 @@ npm run test:headed              # Visible browser
 npm run test:debug               # Playwright Inspector
 ```
 
+**Make Commands** (preferred for workflows):
+```bash
+make test                        # Run all tests
+make test-smoke                  # Smoke tests only
+make test-dev/qa/prod           # Environment-specific
+make test-headed                 # Visible browser
+make test-debug                  # Debug mode
+make install                     # Install deps + browsers
+make setup                       # Full project setup
+make clean                       # Remove generated files
+```
+
 **Reports & Utils**:
 ```bash
 npm run report                   # Generate HTML report from JSON
 npm run clean                    # Remove reports/screenshots/videos
 npm run lint                     # ESLint check
 npm run format                   # Prettier formatting
+npm run type-check              # TypeScript validation
 ```
 
-**No Playwright CLI** - Use Cucumber CLI via npm scripts. Playwright is the engine, Cucumber is the runner.
+**⚠️ CRITICAL: No Playwright CLI** - Use Cucumber CLI via npm scripts. Playwright is the engine, Cucumber is the runner. Never run `npx playwright test`.
 
 ## 📝 Writing Tests - Strict Conventions
 
@@ -193,25 +206,40 @@ const envConfig = ConfigManager.getEnvironmentConfig();
 // { baseUrl, username, password, apiBaseUrl }
 
 const browserConfig = ConfigManager.getBrowserConfig();
-// { browser, headless, timeout, screenshot, trace, video }
+// { browser, headless, timeout, screenshot, trace, video, navigationTimeout, actionTimeout }
 
 const testConfig = ConfigManager.getTestConfig();
-// { workers, retryCount, reportPath, logLevel }
+// { workers, retryCount, reportPath, screenshotPath, videoPath, logLevel }
 ```
+
+**Key Methods**:
+- `getEnvironment()` - Current environment (dev/qa/prod)
+- `setEnvironment(env)` - Switch environments programmatically
+- `getFullConfig()` - All configs combined (useful for debugging)
 
 **Add new environment**:
 1. Add to `.env`: `STAGING_BASE_URL=https://staging.example.com`
-2. ConfigManager auto-loads via `${env}_BASE_URL` pattern
+2. Add credentials: `STAGING_USERNAME=user` and `STAGING_PASSWORD=pass`
+3. ConfigManager auto-loads via `${env}_BASE_URL` pattern
 
 ### 5. Hooks (`src/support/hooks.ts`)
 
 **Auto-executed** - Don't call manually
 **Current hooks**:
 - `BeforeAll` - Create directories, log config
-- `Before` - Initialize browser/context/page per scenario
-- `AfterStep` - Log step status, screenshot on failure
-- `After` - Cleanup browser, save trace on failure
-- `Before({ tags: '@smoke' })` - Tag-specific setup
+- `Before` - Initialize browser/context/page per scenario, set scenario/feature names, log tags
+- `AfterStep` - Log step status (✓/✗/⊘), screenshot on failure
+- `After` - Log scenario result/duration, cleanup browser, save trace on failure
+- `AfterAll` - Log test suite completion
+- `Before({ tags: '@tag' })` - Tag-specific setup (add custom hooks here)
+
+**Key Context Properties** (in CustomWorld):
+- `this.page` - Playwright Page instance
+- `this.context` - BrowserContext for cookies/storage
+- `this.browser` - Browser instance
+- `this.testName` / `this.scenarioName` - Current scenario name
+- `this.featureName` - Current feature name
+- `this.startTime` - Scenario start timestamp
 
 **Add custom hook**:
 ```typescript
@@ -271,7 +299,16 @@ import { logger } from '@utils/Logger';
 this.page!      // Current page
 this.context!   // Browser context
 this.browser!   // Browser instance
+this.testName   // Current scenario name
+this.featureName // Current feature name
 ```
+
+**CustomWorld methods**:
+- `init()` - Initialize browser/context/page (called by Before hook)
+- `cleanup()` - Close browser and log duration (called by After hook)
+- `takeScreenshot(name)` - Capture screenshot to file
+- `attachScreenshot(name)` - Capture and attach to Cucumber report
+- `saveTrace(name)` - Save Playwright trace (auto-restarts tracing after save)
 
 ### Parallel Execution
 
@@ -279,6 +316,7 @@ this.browser!   // Browser instance
 - Dev: 1 worker (sequential)
 - QA: 3 workers
 - Prod: 5 workers
+- Default: 2 workers
 
 **Important**: Each worker gets isolated browser instance (no state sharing)
 
