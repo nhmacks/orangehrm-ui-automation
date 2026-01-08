@@ -124,7 +124,7 @@ Feature: User Management
         And the user should have "Admin" role
         And the user should have "Enabled" status
 
-    @um012 @ui-validation @user-creation
+    @um012 @ui-validation
     Scenario: Verify Add User form fields are present and functional
         Given I navigate to the Admin module
         And I am on the System Users page
@@ -138,3 +138,4 @@ Feature: User Management
         And I should see the Confirm Password text field
         And I should see the Save button in form
         And I should see the Cancel button in form
+
