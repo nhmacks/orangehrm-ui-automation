@@ -246,4 +246,28 @@ export class DashboardPage extends BasePage {
     const menuItem = this.page.getByRole('link', { name: moduleName });
     return await this.isVisible(menuItem);
   }
+
+  /**
+   * Check if user dropdown is visible in header
+   */
+  async isUserDropdownInHeaderVisible(): Promise<boolean> {
+    try {
+      await this.waitForElement(this.userDropdown, 5000);
+      return await this.isVisible(this.userDropdown);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check if on dashboard page
+   */
+  async isOnDashboardPage(): Promise<boolean> {
+    try {
+      await this.page.waitForURL(/.*dashboard/, { timeout: 5000 });
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

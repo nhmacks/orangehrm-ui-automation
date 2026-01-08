@@ -59,10 +59,15 @@ export class LoginPage extends BasePage {
   async clickLoginButton(): Promise<void> {
     logger.info('Clicking login button');
     await this.click(this.loginButton);
-    // Wait for navigation to complete
-    await this.page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {
-      logger.warn('Network did not become idle within timeout after login');
-    });
+    // Wait for either navigation or error message to appear
+    try {
+      await Promise.race([
+        this.page.waitForURL(/.*dashboard/, { timeout: 5000 }),
+        this.page.waitForSelector('.oxd-alert-content-text', { timeout: 5000 })
+      ]);
+    } catch {
+      logger.warn('Neither dashboard loaded nor error appeared within timeout');
+    }
     logger.info('Login button clicked and navigation completed');
   }
 
@@ -99,7 +104,23 @@ export class LoginPage extends BasePage {
    * Check if error message is displayed
    */
   async isErrorDisplayed(): Promise<boolean> {
-    return await this.isVisible(this.errorMessage);
+    try {
+      // First try to find the specific alert error message
+      const alertError = this.page.locator('.oxd-alert-content-text');
+      if (await alertError.isVisible().catch(() => false)) {
+        return true;
+      }
+      
+      // Also check for general alert container
+      const alertContainer = this.page.locator('.oxd-alert');
+      if (await alertContainer.isVisible().catch(() => false)) {
+        return true;
+      }
+      
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -215,5 +236,33 @@ export class LoginPage extends BasePage {
    */
   async isLogoDisplayed(): Promise<boolean> {
     return await this.isVisible(this.logoImage);
+  }
+
+  /**
+   * Check if password field is masked
+   */
+  async isPasswordFieldMasked(): Promise<boolean> {
+    const type = await this.getPasswordFieldType();
+    return type === 'password';
+  }
+
+  /**
+   * Get password visible value (should fail if masked properly)
+   */
+  async isPasswordValueVisible(): Promise<boolean> {
+    const type = await this.getPasswordFieldType();
+    return type !== 'password';
+  }
+
+  /**
+   * Check if user is logged in successfully
+   */
+  async isLoggedInSuccessfully(): Promise<boolean> {
+    try {
+      await this.page.waitForURL(/.*dashboard/, { timeout: 5000 });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

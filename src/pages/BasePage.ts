@@ -255,4 +255,28 @@ export abstract class BasePage {
     logger.info('Executed JavaScript');
     return result as T;
   }
+
+  /**
+   * Get attribute from element
+   */
+  async getAttribute(locator: Locator, attributeName: string): Promise<string | null> {
+    try {
+      return await locator.getAttribute(attributeName);
+    } catch (error) {
+      logger.error(`Failed to get attribute ${attributeName}`, { error });
+      return null;
+    }
+  }
+
+  /**
+   * Check if element is enabled
+   */
+  async isEnabled(locator: Locator): Promise<boolean> {
+    try {
+      return await locator.isEnabled();
+    } catch (error) {
+      logger.error('Failed to check if element is enabled', { error });
+      return false;
+    }
+  }
 }
