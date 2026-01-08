@@ -247,44 +247,87 @@ jobs:
   deploy-report:
     name: Deploy Test Report
     needs: [test]
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: always()
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create reports directory
+        run: mkdir -p reports
         
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: downloaded-artifacts
         
-      - name: Prepare report directory
+      - name: Extract and organize reports
         run: |
-          mkdir -p public/reports/${{ github.run_number }}
-          if [ -d "artifacts/cucumber-report-chromium" ]; then
-            cp -r artifacts/cucumber-report-chromium/* public/reports/${{ github.run_number }}/
-          fi
-          if [ -d "artifacts/test-results-chromium/reports" ]; then
-            cp -r artifacts/test-results-chromium/reports/* public/reports/${{ github.run_number }}/
+          # Get the latest run number
+          RUN_NUM=${{ github.run_number }}
+          BRANCH_NAME=$(echo ${{ github.ref }} | sed 's|refs/heads/||')
+          
+          # Create branch-specific directory
+          mkdir -p reports/$BRANCH_NAME/$RUN_NUM
+          
+          # Copy reports
+          if [ -d "downloaded-artifacts/cucumber-report-chromium" ]; then
+            cp -r downloaded-artifacts/cucumber-report-chromium/* reports/$BRANCH_NAME/$RUN_NUM/
           fi
           
-          # Create index with links to all reports
-          echo "<html><head><title>Test Reports</title></head><body>" > public/index.html
-          echo "<h1>OrangeHRM Test Reports</h1>" >> public/index.html
-          echo "<ul>" >> public/index.html
-          for dir in public/reports/*/; do
-            run=$(basename "$dir")
-            echo "<li><a href='reports/$run/cucumber-report.html'>Run #$run</a></li>" >> public/index.html
+          if [ -d "downloaded-artifacts/test-results-chromium/reports" ]; then
+            cp -r downloaded-artifacts/test-results-chromium/reports/* reports/$BRANCH_NAME/$RUN_NUM/ 2>/dev/null || true
+          fi
+          
+          # Create index
+          echo "<!DOCTYPE html>" > index.html
+          echo "<html>" >> index.html
+          echo "<head>" >> index.html
+          echo "<title>OrangeHRM Test Reports</title>" >> index.html
+          echo "<style>" >> index.html
+          echo "body { font-family: Arial, sans-serif; margin: 20px; }" >> index.html
+          echo "h1 { color: #333; }" >> index.html
+          echo "ul { list-style-type: none; padding: 0; }" >> index.html
+          echo "li { margin: 10px 0; }" >> index.html
+          echo "a { color: #0066cc; text-decoration: none; font-weight: bold; }" >> index.html
+          echo "a:hover { text-decoration: underline; }" >> index.html
+          echo ".branch { margin-top: 30px; padding: 15px; background: #f5f5f5; border-left: 4px solid #0066cc; }" >> index.html
+          echo ".run-link { margin-left: 20px; margin-top: 5px; }" >> index.html
+          echo "</style>" >> index.html
+          echo "</head>" >> index.html
+          echo "<body>" >> index.html
+          echo "<h1>🧪 OrangeHRM Test Reports</h1>" >> index.html
+          echo "<p>Latest test execution reports:</p>" >> index.html
+          
+          # List all branches with reports
+          for branch_dir in reports/*/; do
+            branch=$(basename "$branch_dir")
+            echo "<div class='branch'>" >> index.html
+            echo "<h2>Branch: <strong>$branch</strong></h2>" >> index.html
+            
+            # List runs for each branch (reverse order, latest first)
+            for run_dir in $(ls -d "$branch_dir"*/ 2>/dev/null | sort -rV); do
+              run=$(basename "$run_dir")
+              echo "<div class='run-link'>" >> index.html
+              echo "<a href='reports/$branch/$run/cucumber-report.html'>Run #$run</a>" >> index.html
+              echo "</div>" >> index.html
+            done
+            echo "</div>" >> index.html
           done
-          echo "</ul></body></html>" >> public/index.html
+          
+          echo "</body>" >> index.html
+          echo "</html>" >> index.html
         
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
-          keep_files: true
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+      - name: Commit and push
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "docs: Update test reports - Run #${{ github.run_number }}" --allow-empty
+          git push origin gh-pages
+
 
