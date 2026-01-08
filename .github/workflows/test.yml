@@ -10,7 +10,7 @@ on:
       environment:
         description: 'Test environment'
         required: true
-        default: 'qa'
+        default: 'dev'
         type: choice
         options:
           - dev
@@ -61,7 +61,7 @@ jobs:
       - name: Create .env file
         run: |
           cp .env.example .env
-          echo "TEST_ENV=${{ github.event.inputs.environment || 'qa' }}" >> .env
+          echo "TEST_ENV=${{ github.event.inputs.environment || 'dev' }}" >> .env
           echo "BROWSER=${{ matrix.browser }}" >> .env
           echo "HEADLESS=true" >> .env
 
@@ -104,7 +104,7 @@ jobs:
               const comment = `## 🧪 Test Results
               
               **Browser:** ${{ matrix.browser }}
-              **Environment:** ${{ github.event.inputs.environment || 'qa' }}
+              **Environment:** ${{ github.event.inputs.environment || 'dev' }}
               
               - ✅ **Passed:** ${summary.passed}/${summary.total}
               - ❌ **Failed:** ${summary.failed}
@@ -149,7 +149,7 @@ jobs:
       - name: Create .env file
         run: |
           cp .env.example .env
-          echo "TEST_ENV=${{ github.event.inputs.environment || 'qa' }}" >> .env
+          echo "TEST_ENV=${{ github.event.inputs.environment || 'dev' }}" >> .env
           echo "BROWSER=chromium" >> .env
           echo "HEADLESS=true" >> .env
 
