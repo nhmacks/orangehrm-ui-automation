@@ -1,0 +1,81 @@
+{
+  "cucumberautocomplete.steps": [
+    "src/step-definitions/**/*.ts"
+  ],
+  "cucumberautocomplete.syncfeatures": "features/**/*.feature",
+  "cucumberautocomplete.strictGherkinCompletion": true,
+  "cucumberautocomplete.strictGherkinValidation": true,
+  "cucumberautocomplete.smartSnippets": true,
+  "cucumberautocomplete.stepsInvariants": true,
+  "cucumberautocomplete.customParameters": [
+    {
+      "parameter": "{string}",
+      "value": "\"([^\"]*)\""
+    },
+    {
+      "parameter": "{int}",
+      "value": "(\\d+)"
+    },
+    {
+      "parameter": "{float}",
+      "value": "(\\d+\\.\\d+)"
+    }
+  ],
+  "cucumberautocomplete.pages": {
+    "users": "src/pages/*Page.ts",
+    "pathes": "src/pages",
+    "objects": {
+      "loginPage": "src/pages/LoginPage.ts",
+      "dashboardPage": "src/pages/DashboardPage.ts"
+    }
+  },
+  "cucumberautocomplete.skipDocStringsFormat": false,
+  "cucumberautocomplete.formatConfOverride": {
+    "And": 2,
+    "But": 2,
+    "Then": 2,
+    "When": 2,
+    "Given": 2,
+    "Feature": 0,
+    "Background": 1,
+    "Scenario": 1,
+    "Scenario Outline": 1
+  },
+  "cucumberautocomplete.onTypeFormat": true,
+  "cucumberautocomplete.gherkinDefinitionPart": "(Given|When|Then|And|But)\\(",
+  "cucumberautocomplete.stepRegExSymbol": "'",
+  
+  "editor.quickSuggestions": {
+    "comments": false,
+    "strings": true,
+    "other": true
+  },
+  
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  
+  "[feature]": {
+    "editor.defaultFormatter": "alexkrechik.cucumberautocomplete",
+    "editor.formatOnSave": true
+  },
+  
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  
+  "files.associations": {
+    "*.feature": "feature"
+  },
+  
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/reports": true,
+    "**/screenshots": true,
+    "**/videos": true,
+    "**/logs": true
+  }
+}

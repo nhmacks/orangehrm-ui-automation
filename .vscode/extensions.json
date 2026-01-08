@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "alexkrechik.cucumberautocomplete",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-playwright.playwright",
+    "orta.vscode-jest",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens",
+    "usernamehw.errorlens"
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "default": {
+    "require": [
+      "src/step-definitions/**/*.ts",
+      "src/support/**/*.ts"
+    ],
+    "requireModule": [
+      "ts-node/register"
+    ],
+    "format": [
+      "progress-bar",
+      "html:reports/cucumber-report.html",
+      "json:reports/cucumber-report.json"
+    ],
+    "formatOptions": {
+      "snippetInterface": "async-await"
+    },
+    "parallel": 2,
+    "retry": 1,
+    "retryTagFilter": "@flaky",
+    "timeout": 60000
+  },
+  "dev": {
+    "require": [
+      "src/step-definitions/**/*.ts",
+      "src/support/**/*.ts"
+    ],
+    "requireModule": [
+      "ts-node/register"
+    ],
+    "format": [
+      "progress-bar"
+    ],
+    "parallel": 1,
+    "retry": 0,
+    "timeout": 60000,
+    "world": {
+      "environment": "dev"
+    }
+  },
+  "qa": {
+    "require": [
+      "src/step-definitions/**/*.ts",
+      "src/support/**/*.ts"
+    ],
+    "requireModule": [
+      "ts-node/register"
+    ],
+    "format": [
+      "progress-bar",
+      "html:reports/cucumber-report.html",
+      "json:reports/cucumber-report.json"
+    ],
+    "parallel": 3,
+    "retry": 1,
+    "timeout": 60000,
+    "world": {
+      "environment": "qa"
+    }
+  },
+  "prod": {
+    "require": [
+      "src/step-definitions/**/*.ts",
+      "src/support/**/*.ts"
+    ],
+    "requireModule": [
+      "ts-node/register"
+    ],
+    "format": [
+      "progress-bar",
+      "html:reports/cucumber-report.html",
+      "json:reports/cucumber-report.json",
+      "junit:reports/cucumber-report.xml"
+    ],
+    "parallel": 5,
+    "retry": 2,
+    "world": {
+      "environment": "prod"
+    }
+  },
+  "ci": {
+    "require": [
+      "src/step-definitions/**/*.ts",
+      "src/support/**/*.ts"
+    ],
+    "requireModule": [
+      "ts-node/register"
+    ],
+    "format": [
+      "progress-bar",
+      "html:reports/cucumber-report.html",
+      "json:reports/cucumber-report.json",
+      "junit:reports/cucumber-report.xml"
+    ],
+    "parallel": 4,
+    "retry": 2,
+    "retryTagFilter": "@flaky",
+    "timeout": 60000,
+    "dryRun": false,
+    "failFast": false
+  }
+}
