@@ -59,7 +59,7 @@ export class ReportGenerator {
 
     try {
       const reportData = JSON.parse(fs.readFileSync(ReportGenerator.jsonReport, 'utf-8'));
-      
+
       let totalScenarios = 0;
       let passedScenarios = 0;
       let failedScenarios = 0;
@@ -69,11 +69,11 @@ export class ReportGenerator {
       reportData.forEach((feature: any) => {
         feature.elements.forEach((scenario: any) => {
           totalScenarios++;
-          
-          const scenarioStatus = scenario.steps.every((step: any) => 
+
+          const scenarioStatus = scenario.steps.every((step: any) =>
             step.result.status === 'passed' || step.result.status === 'skipped'
           );
-          
+
           if (scenarioStatus) {
             passedScenarios++;
           } else {
@@ -142,9 +142,9 @@ export class ReportGenerator {
       await execAsync(command);
       logger.info(`Opening HTML report in default browser...`);
     } catch (error) {
-      logger.warn('Could not open report automatically. Please open manually:', { 
+      logger.warn('Could not open report automatically. Please open manually:', {
         path: ReportGenerator.htmlReport,
-        error 
+        error
       });
     }
   }
@@ -154,11 +154,11 @@ export class ReportGenerator {
    */
   static cleanReports(): void {
     const patterns = ['*.html', '*.json', '*.xml'];
-    
+
     patterns.forEach(pattern => {
       const files = fs.readdirSync(ReportGenerator.reportsDir)
         .filter(file => file.endsWith(pattern.replace('*', '')));
-      
+
       files.forEach(file => {
         fs.unlinkSync(path.join(ReportGenerator.reportsDir, file));
       });

@@ -87,7 +87,7 @@ When('I see filtered results', { timeout: 30000 }, async function (this: ICustom
 Then('I should see users matching the username {string}', async function (this: ICustomWorld, username: string) {
   const userManagementPage = new UserManagementPage(this.page!);
   const resultsCount = await userManagementPage.getResultsCount();
-  
+
   if (resultsCount > 0) {
     const usernamesMatch = await userManagementPage.verifyUsernamesContain(username);
     expect(usernamesMatch).toBeTruthy();
@@ -127,7 +127,7 @@ Then('the results should display the correct role', async function (this: ICusto
 Then('I should see users with employee name containing {string}', async function (this: ICustomWorld, employeeName: string) {
   const userManagementPage = new UserManagementPage(this.page!);
   const resultsCount = await userManagementPage.getResultsCount();
-  
+
   // If there are results, verify they match the filter (but be flexible if data doesn't match)
   if (resultsCount > 0) {
     const namesMatch = await userManagementPage.verifyEmployeeNamesContain(employeeName);
@@ -341,13 +341,13 @@ When('I click the Save button', async function (this: ICustomWorld) {
 
 Then('I should see a success message', { timeout: 30000 }, async function (this: ICustomWorld) {
   const addUserPage = new AddUserPage(this.page!);
-  
+
   // Wait a bit for any messages to appear
   await this.page!.waitForTimeout(2000);
-  
+
   const isSuccessDisplayed = await addUserPage.isSuccessMessageDisplayed();
   const isErrorDisplayed = await addUserPage.isErrorMessageDisplayed();
-  
+
   if (isSuccessDisplayed) {
     logger.info('Success message displayed - user created successfully');
   } else if (isErrorDisplayed) {
@@ -356,7 +356,7 @@ Then('I should see a success message', { timeout: 30000 }, async function (this:
     logger.warn('No success or error message displayed - form may not have submitted correctly (possibly due to missing employee selection in demo environment)');
     // Don't fail - demo environment may not show messages reliably
   }
-  
+
   // Accept any of: success message, error message, or no message (graceful handling for demo flakiness)
   // This is intentionally flexible for the unstable demo environment
   logger.info('Form submission attempt completed (message status may vary in demo environment)');
@@ -364,10 +364,10 @@ Then('I should see a success message', { timeout: 30000 }, async function (this:
 
 Then('I should be redirected to System Users page', { timeout: 45000 }, async function (this: ICustomWorld) {
   const userManagementPage = new UserManagementPage(this.page!);
-  
+
   // Strategy: Be very flexible about "redirection" since demo site may not actually redirect
   // Instead, verify we can see the System Users page elements
-  
+
   // First, try waiting for URL/page load, but don't fail
   await Promise.race([
     this.page!.waitForURL(/.*\/admin\/viewSystemUsers/, { timeout: 30000 }),
@@ -376,29 +376,29 @@ Then('I should be redirected to System Users page', { timeout: 45000 }, async fu
   ]).catch(() => {
     logger.warn('Standard redirect wait completed/timed out - checking page state');
   });
-  
+
   // Small buffer for rendering
   await this.page!.waitForTimeout(2000);
-  
+
   // Check multiple indicators of being on System Users page
   const url = this.page!.url();
   const isOnSystemUsers = await userManagementPage.isOnSystemUsersPage();
   const hasSearchButton = await this.page!.getByRole('button', { name: 'Search' }).isVisible().catch(() => false);
   const hasAddButton = await this.page!.getByRole('button', { name: 'Add' }).isVisible().catch(() => false);
   const hasUsernameFilter = await this.page!.locator('input[placeholder*="Username"]').isVisible().catch(() => false);
-  
+
   logger.info(`Redirect check - URL: ${url}, isOnSystemUsers: ${isOnSystemUsers}, hasSearch: ${hasSearchButton}, hasAdd: ${hasAddButton}, hasFilter: ${hasUsernameFilter}`);
-  
+
   // Accept if ANY of these conditions are true:
   // 1. URL contains expected path
   // 2. Key elements are visible (Search + Add buttons)
   // 3. Filter input is visible
   const isValidState = isOnSystemUsers || (hasSearchButton && hasAddButton) || hasUsernameFilter;
-  
+
   if (!isValidState) {
     logger.error('Redirect verification failed - none of the expected conditions met');
   }
-  
+
   expect(isValidState).toBeTruthy();
   logger.info('Verified redirection to System Users page (or equivalent state)');
 });
@@ -410,13 +410,13 @@ Then('I should be redirected to System Users page', { timeout: 45000 }, async fu
 Then('the user should have {string} role', async function (this: ICustomWorld, expectedRole: string) {
   const userManagementPage = new UserManagementPage(this.page!);
   const roles = await userManagementPage.getAllUserRoles();
-  
+
   if (roles.length === 0) {
     logger.warn('No users found in results - user may not be visible yet (demo environment delay)');
     // Accept 0 results as valid (demo site may have async data processing)
     return;
   }
-  
+
   const hasRole = roles.some(role => role.toLowerCase() === expectedRole.toLowerCase());
   expect(hasRole).toBeTruthy();
   logger.info(`Verified user has role: ${expectedRole}`);
@@ -425,13 +425,13 @@ Then('the user should have {string} role', async function (this: ICustomWorld, e
 Then('the user should have {string} status', async function (this: ICustomWorld, expectedStatus: string) {
   const userManagementPage = new UserManagementPage(this.page!);
   const statuses = await userManagementPage.getAllStatuses();
-  
+
   if (statuses.length === 0) {
     logger.warn('No users found in results - user may not be visible yet (demo environment delay)');
     // Accept 0 results as valid (demo site may have async data processing)
     return;
   }
-  
+
   const hasStatus = statuses.some(status => status.toLowerCase() === expectedStatus.toLowerCase());
   expect(hasStatus).toBeTruthy();
   logger.info(`Verified user has status: ${expectedStatus}`);
