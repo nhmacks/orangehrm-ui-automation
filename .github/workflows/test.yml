@@ -268,14 +268,18 @@ jobs:
           # Create directory structure
           mkdir -p public/reports/$BRANCH_NAME/$RUN_NUM
           
-          # Copy reports
-          if [ -d "downloaded-artifacts/cucumber-report-chromium" ]; then
-            cp -r downloaded-artifacts/cucumber-report-chromium/* public/reports/$BRANCH_NAME/$RUN_NUM/
+          # Copy ALL reports from test-results (this has the complete reports folder)
+          if [ -d "downloaded-artifacts/test-results-chromium/reports" ]; then
+            cp -r downloaded-artifacts/test-results-chromium/reports/* public/reports/$BRANCH_NAME/$RUN_NUM/
+            echo "✅ Copied reports from test-results-chromium"
+            ls -la public/reports/$BRANCH_NAME/$RUN_NUM/
+          else
+            echo "⚠️ No reports found in test-results-chromium"
           fi
           
-          if [ -d "downloaded-artifacts/test-results-chromium/reports" ]; then
-            cp -r downloaded-artifacts/test-results-chromium/reports/* public/reports/$BRANCH_NAME/$RUN_NUM/ 2>/dev/null || true
-          fi
+          # Debug: list what was downloaded
+          echo "📦 Downloaded artifacts:"
+          ls -laR downloaded-artifacts/
           
       - name: Create index page
         run: |
