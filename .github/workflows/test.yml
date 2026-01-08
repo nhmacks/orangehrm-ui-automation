@@ -21,6 +21,13 @@ on:
         required: false
         default: '@smoke'
 
+# Permisos necesarios para GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  pull-requests: write
+
 env:
   NODE_VERSION: '20.x'
   
@@ -240,16 +247,44 @@ jobs:
   deploy-report:
     name: Deploy Test Report
     needs: [test]
-    if: always()
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+        
+      - name: Prepare report directory
+        run: |
+          mkdir -p public/reports/${{ github.run_number }}
+          if [ -d "artifacts/cucumber-report-chromium" ]; then
+            cp -r artifacts/cucumber-report-chromium/* public/reports/${{ github.run_number }}/
+          fi
+          if [ -d "artifacts/test-results-chromium/reports" ]; then
+            cp -r artifacts/test-results-chromium/reports/* public/reports/${{ github.run_number }}/
+          fi
+          
+          # Create index with links to all reports
+          echo "<html><head><title>Test Reports</title></head><body>" > public/index.html
+          echo "<h1>OrangeHRM Test Reports</h1>" >> public/index.html
+          echo "<ul>" >> public/index.html
+          for dir in public/reports/*/; do
+            run=$(basename "$dir")
+            echo "<li><a href='reports/$run/cucumber-report.html'>Run #$run</a></li>" >> public/index.html
+          done
+          echo "</ul></body></html>" >> public/index.html
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          destination_dir: reports/${{ github.run_number }}
+          publish_dir: ./public
+          keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+
