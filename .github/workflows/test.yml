@@ -232,7 +232,7 @@ jobs:
       - run: npx playwright install chromium --with-deps
       
       - name: Run smoke tests
-        run: npm run test:tags "@smoke"
+        run: npm run test:tags "@lg010"
         env:
           BROWSER: chromium
           HEADLESS: true
